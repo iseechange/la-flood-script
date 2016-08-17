@@ -1,40 +1,32 @@
 
-var Twitter = require('twitter');
-var Promise = require('bluebird');
-var request = Promise.promisify(require('request'), {multiArgs: true});
-var louisiana = require('./louisiana.json');
-var geoJsonUtils = require('geojson-utils');
+var usgs = require('./usgs');
+var utils = require('./utils');
+var twitter = require('./twitter');
 var geoJsonPolygonCenter = require('geojson-polygon-center');
 
-var twitter = new Twitter({
-  consumer_key: '',
-  consumer_secret: '',
-  access_token_key: '',
-  access_token_secret: ''
+var tweetStream = twitter.createTweetStream({
+  track: 'need rescue,needs rescue,need help,needs help,larescue,send boat,rescue,shelter,louisiana'
 });
 
-function streamTweets() {
-  if (streamTweets.streaming) {
+tweetStream.on('data', function(tweet) {
+  console.log('\n\n');
+  console.log('New tweet!', tweet.text);
+  var point = null;
+  !!tweet.coordinates 
+    && (point = tweet.coordinates); 
+  !!tweet.place 
+    && (point = geoJsonPolygonCenter(tweet.place.bounding_box)); 
+  if (!point) {
+    console.log('Missing location data.');
     return;
   }
-  streamTweets.streaming = true;
-  var stream = twitter.stream('statuses/filter', {track: 'need rescue,needs rescue,need help, needs help,larescue,send boat'});
-  stream.on('data', function(event) {
-    var coordinates;
-    if (event.coordinates) {
-      coordinates = event.coordinates
-    }
-    if (event.place)  {
-      coordinates = geoJsonPolygonCenter(event.place.bounding_box)
-    }
-    if (coordinates && geoJsonUtils.pointInMultiPolygon(coordinates, louisiana)) {
-      console.log('LOUISIANA MATCH');
-      console.log(event.text);
-    }
-  });
-  stream.on('error', function(error) {
-    throw error;
-  });
-}
+  var isInLouisiana = utils.isPointInLouisiana(point);
+  var isNearUSGSStation = usgs.isPointOrPolygonNearUSGSStation(point);
+  console.log(isInLouisiana ? 'Tweet in/from Louisiana.' : 'Tweet from somewhere else.');
+  console.log(isNearUSGSStation ? 'Tweet near USGS station.' : 'Tweet not near USGS station.');
+  console.log('\n\n');
+});
 
-streamTweets();
+tweetStream.on('error', function(error) {
+  throw error;
+});

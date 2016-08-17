@@ -1,0 +1,19 @@
+{
+  "name": "iseechange-louisiana",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.4.1",
+    "geojson": "^0.3.0",
+    "geojson-polygon-center": "0.0.0",
+    "geojson-utils": "^1.1.0",
+    "request": "^2.74.0",
+    "twitter": "^1.4.0"
+  }
+}
